@@ -19,6 +19,14 @@ const client = new Client
     ]
 });
 
+const rolesText = [
+// add roles here for premake
+
+
+]
+
+
+
 client.commands = new Collection();
 const foldersPath =path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
@@ -68,7 +76,6 @@ client.on(Events.InteractionCreate, async interaction => {
 	}
 
 });
-
 
 client.once(Events.ClientReady, cReady=> {
     console.log(`logged in as ${cReady.user.tag}`);
