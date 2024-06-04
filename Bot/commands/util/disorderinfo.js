@@ -30,9 +30,14 @@ const getinfoDisorder = async (disorder) =>{
             ? data.hasPart.map(part => part.description).filter(desc => desc).join('\n\n')
             : '';
 
+        // extract sectional data too
+        const sections = data.hasPart ? data.hasPart.map(part=> ({title:part.headline, content: part.description})).filter|(section => section.content):[];
         return {
             mainDescription: description,
-            additionalDescriptions: hasPartDescriptions
+            additionalDescriptions: hasPartDescriptions,
+            sections: sections,
+            url: data.url
+            // wip, for later
         };
     } catch (error) {
         console.error(error);
@@ -60,6 +65,7 @@ module.exports = {
                 const data = await getinfoDisorder(disorder);
                 const replyMessage = `Information about ${disorder}:**\n\n${data.mainDescription}\n\n${data.additionalDescriptions}**`;
                 await interaction.reply(replyMessage);
+                console.log(data);
             }catch(error){
                 await interaction.reply("check the console log");
             }
