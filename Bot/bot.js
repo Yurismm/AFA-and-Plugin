@@ -6,36 +6,6 @@ const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, InteractionType ,ButtonBuilder } = require('discord.js');
 
 
-console.log('nhskey2 test', process.env.NHS_Key_2);
-
-const getinfoDisorder = async (disorder) =>{
-    // get request from NHS APi
-    const options = {
-        method: 'GET',
-        url: `https://api.nhs.uk/conditions/${disorder}`,
-        headers: {
-        'subscription-key': process.env.NHS_Key_2,
-        }
-    };
-    
-    try {
-        const response = await axios.request(options);
-        console.log(response.data);
-    } catch (error) {
-        console.error(error);
-    }
-};
-
-const testDisorderInfo = async () => {
-	const disorder = 'Hepatitis';
-	try{
-		const data = await getinfoDisorder(disorder);
-		console.log(data)
-	}catch (error){
-		console.error(`an error occurred`, error);
-	}
-};
-
 const client = new Client
 ({
     intents:
@@ -103,7 +73,10 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.once(Events.ClientReady, cReady=> {
-	testDisorderInfo();
+	client.user.setActivity('cooler than cherie', {type: 'WATCHING'})
+
+	client.user.setStatus('online');
+
     console.log(`logged in as ${cReady.user.tag}`);
 });
 
