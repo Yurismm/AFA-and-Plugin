@@ -1,2 +1,4 @@
 node_modules/
 Bot/config.json
+Bot/othertokens.json
+Bot/.env

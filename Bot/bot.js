@@ -1,7 +1,40 @@
-const { token } = require('./config.json');
+require('dotenv').config();
+const axios = require('axios');
+const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
-const {Client, Collection, Events, GatewayIntentBits, InteractionType,ButtonBuilder } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, InteractionType ,ButtonBuilder } = require('discord.js');
+
+
+console.log('nhskey2 test', process.env.NHS_Key_2);
+
+const getinfoDisorder = async (disorder) =>{
+    // get request from NHS APi
+    const options = {
+        method: 'GET',
+        url: `https://api.nhs.uk/conditions/${disorder}`,
+        headers: {
+        'subscription-key': process.env.NHS_Key_2,
+        }
+    };
+    
+    try {
+        const response = await axios.request(options);
+        console.log(response.data);
+    } catch (error) {
+        console.error(error);
+    }
+};
+
+const testDisorderInfo = async () => {
+	const disorder = 'Hepatitis';
+	try{
+		const data = await getinfoDisorder(disorder);
+		console.log(data)
+	}catch (error){
+		console.error(`an error occurred`, error);
+	}
+};
 
 const client = new Client
 ({
@@ -18,14 +51,6 @@ const client = new Client
         GatewayIntentBits.MessageContent,
     ]
 });
-
-const rolesText = [
-// add roles here for premake
-
-
-]
-
-
 
 client.commands = new Collection();
 const foldersPath =path.join(__dirname, 'commands');
@@ -78,6 +103,7 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.once(Events.ClientReady, cReady=> {
+	testDisorderInfo();
     console.log(`logged in as ${cReady.user.tag}`);
 });
 
