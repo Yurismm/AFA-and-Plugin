@@ -4,6 +4,7 @@ const { token, xrapidkey, xhostname} = require('../../config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 
+//todo make as an embed
 
 const nhskey2 = process.env.NHS_KEY_2;
 
@@ -51,6 +52,9 @@ module.exports = {
         
     async execute(interaction){
         const guild = interaction.guild; // server if need
+
+        // maybe check how many people have the role associated with this condition?
+
         const disorder = interaction.options.getString('disorder')
             try{
                 const data = await getinfoDisorder(disorder);

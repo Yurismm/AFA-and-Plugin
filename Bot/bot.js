@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, InteractionType ,ButtonBuilder } = require('discord.js');
 
+//todo make as an embed
 
 const client = new Client
 ({
