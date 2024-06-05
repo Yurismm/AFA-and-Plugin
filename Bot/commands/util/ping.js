@@ -13,11 +13,8 @@ module.exports = {
         const pingEmbed = new EmbedBuilder()
             .setColor(0xFFFFFF)
             .setTitle("Pong!")
-            .addFields(
-                {name: "Latency: ", value: latency + "ms"},
-                {name: "API Latency: ", value: apiLatency + "ms"},
-            )
+            .addFields({ name: "Latency: ", value: latency + "ms" }, { name: "API Latency: ", value: apiLatency + "ms" }, )
 
-        await interaction.editReply({embeds:[pingEmbed]});
+        await interaction.editReply({ embeds: [pingEmbed] });
     },
 };
