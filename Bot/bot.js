@@ -4,6 +4,8 @@ const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBuilder } = require('discord.js');
+const checkcontent = require('./checkcontent.js');
+
 
 const client = new Client({
     intents: [
@@ -29,6 +31,50 @@ const roleButtonMapping = {};
 
 // set this to member later when i get the chance
 const autorole = "";
+
+// check message once its created
+client.on('messageCreate', async message => {
+    if(message.attachment.size > 0) {
+        message.attachments.forEach(async attachment =>{
+            const url = attachment.url;
+            const response = await axios({
+                url,
+                method: 'GET',
+                responseType: 'stream',
+            });
+        })
+
+        const filePath = path.join(__dirname, 'downloads', attachment.name);
+        const writer = fs.createWriteStream(filePath);
+
+        response.data.pipe(writer);
+
+        writer.on('finish', () => {
+            console.log(`downloaded ${attachment.name}`);
+            analyzeContent(filePath, (err, flashDetcted) => {
+                // wip
+                if(err){
+                    console.error('error analyzing content: ', err);
+                    message.reply('problem analyzing content -> err -> check console');
+                }else if(flashDetcted){
+                    console.log("flash detected")
+                    message.reply('test warning')
+                }else{
+                    message.reply('no flashing content detected')
+                }
+                
+                fs.unlinkSync(filePath);
+            });
+        });
+        
+        writer.on('error', () => {
+            console.error(`failed to download ${attachment.name}`);
+        });
+
+    };
+})
+
+
 
 // add the commands from the commands folder WIP
 for (const folder of commandFolders) {
