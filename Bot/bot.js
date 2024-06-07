@@ -4,7 +4,8 @@ const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBuilder } = require('discord.js');
-const checkcontent = require('./checkcontent.js');
+const checkContent = require('./checkcontent.js');
+
 
 
 const client = new Client({
@@ -22,6 +23,7 @@ const client = new Client({
 });
 
 client.commands = new Collection();
+
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
@@ -32,48 +34,71 @@ const roleButtonMapping = {};
 // set this to member later when i get the chance
 const autorole = "";
 
-// check message once its created
+// check message once its created for flashing
 client.on('messageCreate', async message => {
-    if(message.attachment.size > 0) {
-        message.attachments.forEach(async attachment =>{
+    console.log('message received: ', message.attachments.size);
+
+    if (message.attachments.size > 0) {
+        console.log('found attachment: ', message.attachments.size);
+
+        message.attachments.forEach(async attachment => {
+            console.log('attachment details:', attachment);
             const url = attachment.url;
-            const response = await axios({
-                url,
-                method: 'GET',
-                responseType: 'stream',
-            });
-        })
+            const name = attachment.name || attachment.filename || 'attachment'; // ensure we have a name for the file
 
-        const filePath = path.join(__dirname, 'downloads', attachment.name);
-        const writer = fs.createWriteStream(filePath);
-
-        response.data.pipe(writer);
-
-        writer.on('finish', () => {
-            console.log(`downloaded ${attachment.name}`);
-            analyzeContent(filePath, (err, flashDetcted) => {
-                // wip
-                if(err){
-                    console.error('error analyzing content: ', err);
-                    message.reply('problem analyzing content -> err -> check console');
-                }else if(flashDetcted){
-                    console.log("flash detected")
-                    message.reply('test warning')
-                }else{
-                    message.reply('no flashing content detected')
+            try {
+                // ensure the downloads directory exists
+                const downloadsDir = path.join(__dirname, 'downloads');
+                if (!fs.existsSync(downloadsDir)) {
+                    fs.mkdirSync(downloadsDir);
                 }
-                
-                fs.unlinkSync(filePath);
-            });
-        });
-        
-        writer.on('error', () => {
-            console.error(`failed to download ${attachment.name}`);
-        });
 
-    };
-})
+                const filePath = path.join(downloadsDir, name);
 
+                const response = await axios({
+                    url,
+                    method: 'GET',
+                    responseType: 'stream',
+                });
+
+                const writer = fs.createWriteStream(filePath);
+
+                response.data.pipe(writer);
+
+                writer.on('finish', () => {
+                    console.log(`downloaded ${name}`.toLowerCase());
+                    checkContent(filePath, (err, flashDetected) => {
+                        if (err) {
+                            console.error('error analyzing content: ', err);
+                            message.reply('problem analyzing content -> err -> check console');
+                        } else if (flashDetected) {
+                            console.log("flash detected");
+                            message.reply('warning: flashing content detected in your attachment.');
+                        } else {
+                            message.reply('no flashing content detected in your attachment.');
+                        }
+
+                        // ensure the file exists before attempting to delete it
+                        if (fs.existsSync(filePath)) {
+                            fs.unlinkSync(filePath);
+                        } else {
+                            console.error(`file not found for deletion: ${filePath}`);
+                        }
+                    });
+                });
+
+                writer.on('error', (err) => {
+                    console.error(`failed to download ${name}:`, err);
+                });
+
+            } catch (error) {
+                console.error(`error downloading attachment: ${error}`);
+            }
+        });
+    } else {
+        console.log('no attachments found');
+    }
+});
 
 
 // add the commands from the commands folder WIP
