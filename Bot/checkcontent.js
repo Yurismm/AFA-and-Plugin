@@ -12,8 +12,8 @@ ffmpeg.setFfprobePath(ffprobePath);
 // calculate brightness difference between two frames using sharp
 async function calculateBrightnessDifference(frame1Path, frame2Path) {
     const [frame1, frame2] = await Promise.all([ // promise all to await both frames to be processed
-        sharp(frame1Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }),
-        sharp(frame2Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+        sharp(frame1Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }), // get alpha to compare brightness
+        sharp(frame2Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) // get alpha to compare brightness
     ]);
 
     const { data: data1, info: info1 } = frame1; // extract data and info from frame1
@@ -21,7 +21,7 @@ async function calculateBrightnessDifference(frame1Path, frame2Path) {
 
 
     let difference = 0;  // init difference to 0
-    const length = Math.min(data1.length, data2.length);
+    const length = Math.min(data1.length, data2.length); // get the minimum length of data1 and data2
 
     for (let i = 0; i < length; i += info1.channels) {
         const brightness1 = 0.299 * data1[i] + 0.587 * data1[i + 1] + 0.114 * data1[i + 2]; // calculate brightness of pixel in frame1

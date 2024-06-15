@@ -141,8 +141,7 @@ client.on(Events.InteractionCreate, async interaction => {
 });
 
 client.once(Events.ClientReady, cReady => {
-    client.user.setActivity('cooler than cherie', { type: 'WATCHING' })
-
+    client.user.setActivity('cooler than cherie', { type: 'WATCHING' });
     client.user.setStatus('online');
 
     console.log(`logged in as ${cReady.user.tag}`);
