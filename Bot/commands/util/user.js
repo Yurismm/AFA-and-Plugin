@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 
 //todo: make this an embed
@@ -19,9 +19,16 @@ module.exports = {
             .map(role => role.name)
             .join(', ') || 'No roles';
 
-        await interaction.reply(`**User Information:**
-- **Username:** ${targetUser.username}
-- **Joined Server On:** ${member.joinedAt}
-- **Roles:** ${roles}`);
+            const userEmbed = new EmbedBuilder()
+            .setColor(0xFFFFFF)
+            .setTitle("User Information")
+            .addFields(
+                { name: 'Username:', value: targetUser.username },
+                { name: 'Joined Server On:', value: member.joinedAt.toDateString() },
+                { name: 'Roles:', value: roles }
+            );
+
+            
+        await interaction.reply({ embeds: [userEmbed] });
     },
 };

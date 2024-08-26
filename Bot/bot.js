@@ -3,10 +3,8 @@ const axios = require('axios');
 const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
-const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBuilder } = require('discord.js');
+const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBuilder, EmbedBuilder } = require('discord.js');
 const checkContent = require('./checkcontent.js');
-
-
 
 const client = new Client({
     intents: [
@@ -69,13 +67,34 @@ client.on('messageCreate', async message => {
                     console.log(`downloaded ${name}`.toLowerCase());
                     checkContent(filePath, (err, flashDetected) => {
                         if (err) {
+                            // create embed 
+                            const problemembed = new EmbedBuilder()
+                            .setColor(0xFFFFFF)
+                            .setTitle('Problem analyzing content')
+                            .setDescription('An error occurred while analyzing the content. Could it be an image?')
                             console.error('error analyzing content: ', err);
-                            message.reply('problem analyzing content -> err -> check console');
+                            
+                            message.reply({ embeds: [problemembed] });
                         } else if (flashDetected) {
+                            const flashembed = new EmbedBuilder()
+                            .setColor(0xFF0000) // red to indicate a warning
+                            .setTitle('Flashing content detected')
+                            .setDescription('Warning: flashing content detected in your attachment.')
+                            .setFooter({ text: 'Please be cautious when viewing this content.'})
+                            .setTimestamp();
+                            // possibly can create a json log file for this to show client side
                             console.log("flash detected");
-                            message.reply('warning: flashing content detected in your attachment.');
+                            
+                            message.reply({ embeds: [flashembed] });
                         } else {
-                            message.reply('no flashing content detected in your attachment.');
+                            const noflashembed = new EmbedBuilder()
+                            .setColor(0x00FF00) // green to indicate no warning
+                            .setTitle('No flashing content detected')
+                            .setDescription('No flashing content detected in your attachment.')
+                            .setFooter({text: 'This content is safe to view.'})
+                            .setTimestamp();
+
+                            message.reply({ embeds: [noflashembed] });
                         }
 
                         // ensure the file exists before attempting to delete it

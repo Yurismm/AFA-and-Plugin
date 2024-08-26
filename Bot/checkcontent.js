@@ -4,6 +4,7 @@ const ffprobePath = require('ffprobe-static').path;
 const fs = require('fs-extra');
 const path = require('path');
 const sharp = require('sharp');
+const { timeStamp } = require('console');
 
 // ffmpeg configuration
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -11,6 +12,8 @@ ffmpeg.setFfprobePath(ffprobePath);
 
 // calculate brightness difference between two frames using sharp
 async function calculateBrightnessDifference(frame1Path, frame2Path) {
+
+
     const [frame1, frame2] = await Promise.all([ // promise all to await both frames to be processed
         sharp(frame1Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }), // get alpha to compare brightness
         sharp(frame2Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) // get alpha to compare brightness
@@ -82,14 +85,26 @@ async function checkContent(filePath, callback) {
             console.log('significant changes:', significantChangeCount);
 
             // adjusted logic to detect flash based on variance, significant changes, and average difference
-            if (variance > 10 || significantChangeCount > 10) { // threshold for significant changes or variance
+            if (variance > 250 || significantChangeCount > 100) { // threshold for significant changes or variance
                 flashDetected = true;
                 // todo: make a variable for these thresholds
-                // if the variance is greater than 10 or there are more than 10 significant changes
+                // changed the variance and significant change thresholds to 250 and 100 respectively
                 // then a flash is detected in the video, a significant change could indicate a flash in the video aswell,
                 // meaning there have been more than 10 significant changes in the video which could indicate a video that is bad
                 // for epileptic people
             }
+            
+            const resultData = {
+                frameDifferences,
+                variance,
+                significantChangeCount,
+                significantChangeCount,
+                flashDetected,
+                timeStamp: new Date().toISOString()
+            }
+
+            fs.writeFileSync(path.join(__dirname, 'verdictlogs','result.json'), JSON.stringify(resultData, null, 2));
+
             callback(null, flashDetected);
 
             // cleanup

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 
 // todo, make this an embed, and make it page list
 
@@ -47,6 +47,19 @@ module.exports = {
         if (remainingRoles > 0) {
             roleCountString += `...and ${remainingRoles} more roles.`;
         }
+
+        /* WIP: EmbedBuilder
+        
+                const serverEmbed = new EmbedBuilder()
+            .setColor(0xFFFFFF)
+            .setTitle("Server Information")
+            .addFields(
+                { name: 'Server Name:', value: guild.name },
+                { name: 'Total Members:', value: guild.memberCount }
+            )
+            .setDescription(roleCountString);
+        
+            */
 
         await interaction.reply(`**Server Information:**
 - **Server Name:** ${guild.name}
