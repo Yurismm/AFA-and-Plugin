@@ -4,6 +4,7 @@ const ffprobePath = require('ffprobe-static').path;
 const fs = require('fs-extra');
 const path = require('path');
 const sharp = require('sharp');
+const axios = require('axios');
 const { timeStamp } = require('console');
 
 // ffmpeg configuration
@@ -13,7 +14,6 @@ ffmpeg.setFfprobePath(ffprobePath);
 // calculate brightness difference between two frames using sharp
 async function calculateBrightnessDifference(frame1Path, frame2Path) {
 
-
     const [frame1, frame2] = await Promise.all([ // promise all to await both frames to be processed
         sharp(frame1Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }), // get alpha to compare brightness
         sharp(frame2Path).ensureAlpha().raw().toBuffer({ resolveWithObject: true }) // get alpha to compare brightness
@@ -21,7 +21,6 @@ async function calculateBrightnessDifference(frame1Path, frame2Path) {
 
     const { data: data1, info: info1 } = frame1; // extract data and info from frame1
     const { data: data2, info: info2 } = frame2; // extract data and info from frame2
-
 
     let difference = 0;  // init difference to 0
     const length = Math.min(data1.length, data2.length); // get the minimum length of data1 and data2
@@ -62,11 +61,17 @@ async function checkContent(filePath, callback) {
 
     let filenames = []; // define filenames array here
 
+    const isGIF = filePath.endsWith('.gif'); // check if the file is a gif
+
+    if(isGIF){ 
+        console.log('gif detected');
+    } // returns correctly? 
+
     // extract frames from the video file
-    ffmpeg(filePath)
-        .on('start', (commandLine) => {
+    const ffmpegCommand = ffmpeg(filePath)
+        .on('start', (commandLine) => { // event listener for start, no console output
             // log the command line used to spawn ffmpeg
-            console.log('spawned ffmpeg'); // removed commandLine as it is too long in the console xd
+            console.log('spawned ffmpeg, type: ', isGIF ? 'gif':'video');
         })
         .on('error', (err) => {
             // log error if an error occurred
@@ -119,14 +124,26 @@ async function checkContent(filePath, callback) {
                 }
             });
         })
-        // saved frames
-        .screenshots({
-            count: 100, // increased number of frames to capture more data
-            folder: framesDir, // directory to save frames
-            size: '320x240', // size of frames
-            filename: 'frame-%i.png' // name convention for frames
-        })
-        .on('filenames', (generatedFilenames) => { // event listener for filenames
+
+        if(isGIF){
+            ffmpegCommand.inputOptions(['-t 10', '-r 10']) // added input options for gifs to limit duration and frame rate
+            .screenshots({
+                count: 50, // less for gifs 
+                folder: framesDir, // directory to save frames
+                size: '320x240', // size of frames
+                filename: 'frame-%i.png' // name convention for frames
+            })
+        } else {
+            // saved frames
+            ffmpegCommand.screenshots({
+                count: 100, // increased number of frames to capture more data
+                folder: framesDir, // directory to save frames
+                size: '320x240', // size of frames
+                filename: 'frame-%i.png' // name convention for frames
+            })
+        }
+
+        ffmpegCommand.on('filenames', (generatedFilenames) => { // event listener for filenames
             filenames = generatedFilenames; // save generated filenames
             console.log('generated filenames:', filenames); // log generated filenames
 
