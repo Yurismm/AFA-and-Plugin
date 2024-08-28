@@ -11,6 +11,11 @@ const { timeStamp } = require('console');
 ffmpeg.setFfmpegPath(ffmpegPath);
 ffmpeg.setFfprobePath(ffprobePath);
 
+
+// function to convert GIF to MP4
+async function convertGifToMp4(gifPath) {
+}
+
 // calculate brightness difference between two frames using sharp
 async function calculateBrightnessDifference(frame1Path, frame2Path) {
 
@@ -66,6 +71,8 @@ async function checkContent(filePath, callback) {
 
     if(isGIF){ 
         console.log('gif detected');
+        // convert to MP4 if gif thing here
+
     } // returns correctly? 
 
     // extract frames from the video file
@@ -126,24 +133,15 @@ async function checkContent(filePath, callback) {
             });
         })
 
-        if(isGIF){
-            // save frames from gifs
-            ffmpegCommand.inputOptions(['-t 10', '-r 10']) // added input options for gifs to limit duration and frame rate
-            .screenshots({
-                count: 50, // less for gifs 
-                folder: framesDir, // directory to save frames
-                size: '320x240', // size of frames
-                filename: 'frame-%i.png' // name convention for frames
-            })
-        } else {
-            // saved frames
-            ffmpegCommand.screenshots({
-                count: 100, // increased number of frames to capture more data
-                folder: framesDir, // directory to save frames
-                size: '320x240', // size of frames
-                filename: 'frame-%i.png' // name convention for frames
-            })
-        }
+
+        // saved frames
+        ffmpegCommand.screenshots({
+            count: 100, // increased number of frames to capture more data
+            folder: framesDir, // directory to save frames
+            size: '320x240', // size of frames
+            filename: 'frame-%i.png' // name convention for frames
+        })
+        
 
         ffmpegCommand.on('filenames', (generatedFilenames) => { // event listener for filenames
             filenames = generatedFilenames; // save generated filenames
