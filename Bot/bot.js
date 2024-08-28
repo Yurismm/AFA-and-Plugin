@@ -25,7 +25,6 @@ client.commands = new Collection();
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
-
 // for the buttons later down the line, im using a lot of the old code from my old bot
 const roleButtonMapping = {};
 

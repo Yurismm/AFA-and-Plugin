@@ -28,12 +28,13 @@ async function calculateBrightnessDifference(frame1Path, frame2Path) {
     for (let i = 0; i < length; i += info1.channels) {
         const brightness1 = 0.299 * data1[i] + 0.587 * data1[i + 1] + 0.114 * data1[i + 2]; // calculate brightness of pixel in frame1
         const brightness2 = 0.299 * data2[i] + 0.587 * data2[i + 1] + 0.114 * data2[i + 2]; // calculate brightness of pixel in frame2
-        difference += Math.abs(brightness1 - brightness2); // calculate difference between brightness of pixels for both frames using absolute value
+        difference += Math.abs(brightness1 - brightness2); 
+        // calculate difference between brightness of pixels for both frames using absolute value
         // a higher difference indicates a significant change in brightness between frames
         // a lower difference indicates a minor change in brightness between frames
-            // therefore, the higher difference could mean that a flash has occurred in the video
-            // and on the otherhand a lower difference could mean that there is no flash in the video
-            // this is then used below to determine significant changes in the video of flashes
+        // therefore, the higher difference could mean that a flash has occurred in the video
+        // and on the otherhand a lower difference could mean that there is no flash in the video
+        // this is then used below to determine significant changes in the video of flashes
         }
 
     const avgDifference = difference / (length / info1.channels); // normalize by number of pixels
@@ -126,6 +127,7 @@ async function checkContent(filePath, callback) {
         })
 
         if(isGIF){
+            // save frames from gifs
             ffmpegCommand.inputOptions(['-t 10', '-r 10']) // added input options for gifs to limit duration and frame rate
             .screenshots({
                 count: 50, // less for gifs 
