@@ -56,7 +56,8 @@ module.exports = {
 
         // make it so that each time the bot turns off the word count stays
         // add a skip button?
-        
+        // add a timer to automatically skip to the next word every 24 hours
+
         const randomIndex = Math.floor(Math.random() * greekWords.length);
         const wordOfTheDay = greekWords[randomIndex];
         const wordCountSoFar = interaction.client.wordCount || 0;
@@ -64,8 +65,8 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setColor(0xFFFFFF)
-            .setTitle('Greek Word of the Day')
-            .setDescription(`**#${wordCountSoFar + 1}/${greekWords.length}**`)
+            .setTitle('**Greek Word of the Day**')
+            .setDescription(`**#${wordCountSoFar + 1}/${greekWords.length} @{1279906477208899584} **`)
             .addFields({name: 'Word', value: wordOfTheDay});
         
         await interaction.reply({ embeds: [embed] });
