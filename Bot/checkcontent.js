@@ -141,7 +141,6 @@ async function checkContent(filePath, callback) {
         ffmpegCommand.on('filenames', (generatedFilenames) => { // event listener for filenames
             filenames = generatedFilenames; // save generated filenames
             console.log('generated filenames:', filenames); // log generated filenames
-
             // add a delay to ensure files are written before reading
             setTimeout(async () => { // added setTimeout to ensure files are written before reading
                 for (let i = 0; i < filenames.length; i++) { // iterate over filenames

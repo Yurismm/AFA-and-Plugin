@@ -6,6 +6,7 @@ const path = require('node:path');
 const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBuilder, EmbedBuilder } = require('discord.js');
 const checkContent = require('./checkcontent.js');
 
+// todo: checks for duration of the video
 
 const client = new Client({
     intents: [
@@ -34,21 +35,21 @@ const autorole = "";
 
 
 // this uses the thumbnail URL we are provided with.
-// observations with tenor: 
-// png url (provided to us) = https://media.tenor.com/EtTrt-7hGQcAAA - AN - /happy-sunday.png
-// mp4 url (not) = https://media.tenor.com/EtTrt-7hGQcAAA - Po - /happy-sunday.mp4
-// webm url (not) = https://media.tenor.com/EtTrt-7hGQcAAA - Ps - /happy-sunday.webm
-// https://media.tenor.com/GiwO27j5cjoAAAAN/kiss-lesbian.png
-// "https://media.tenor.com/GiwO27j5cjoAAA**Po**/kiss-lesbian.**mp4**"
-
 function convertPngToMp4(thumbnailUrl) {
+    // observations with tenor: 
+    // png url (provided to us) = https://media.tenor.com/EtTrt-7hGQcAAA - AN - /happy-sunday.png
+    // mp4 url (not) = https://media.tenor.com/EtTrt-7hGQcAAA - Po - /happy-sunday.mp4
+    // webm url (not) = https://media.tenor.com/EtTrt-7hGQcAAA - Ps - /happy-sunday.webm
+    // https://media.tenor.com/GiwO27j5cjoAAAAN/kiss-lesbian.png
+    // "https://media.tenor.com/GiwO27j5cjoAAA**Po**/kiss-lesbian.**mp4**"
+    
     // replacing AAAAN with AAAPo to get the mp4 video
     const baseVideoUrl = thumbnailUrl.replace('AAAAN', 'AAAPo')
     // change the extension from png to mp4
     const mp4Url = baseVideoUrl.replace('.png', '.mp4');
     return mp4Url;
-}
 
+}
 
 // check message once its created for flashing
 client.on('messageCreate', async message => {
@@ -110,6 +111,7 @@ client.on('messageCreate', async message => {
             writer.on('finish', () => {
                 console.log(`downloaded ${gifUrl}`.toLowerCase());
                 checkContent(filePath, (err, flashDetected) => {
+
                     if (err) {
                         // create embed 
                         const problemembed = new EmbedBuilder()
@@ -117,7 +119,7 @@ client.on('messageCreate', async message => {
                         .setTitle('Problem analyzing content')
                         .setDescription('An error occurred while analyzing the content. Could it be an image?')
                         console.error('error analyzing content: ', err);
-                        
+
                         message.reply({ embeds: [problemembed] });
                     } else if (flashDetected) {
                         const flashembed = new EmbedBuilder()
@@ -140,7 +142,6 @@ client.on('messageCreate', async message => {
 
                         message.reply({ embeds: [noflashembed] });
                     }
-
                     // ensure the file exists before attempting to delete it
                     if (fs.existsSync(filePath)) {
                         fs.unlinkSync(filePath);
