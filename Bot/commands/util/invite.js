@@ -11,7 +11,7 @@ module.exports = {
         const inviteEmbed = new EmbedBuilder()
             .setColor(0xFFFFFF)
             .setTitle("Invite Link")
-            .setDescription("Click [here](https://discord.com/oauth2/authorize?client_id=1119356790199554079&permissions=8&integration_type=0&scope=bot+applications.commands) to invite the bot to your server.");
+            .setDescription("Click [here](https://discord.com/oauth2/authorize?client_id=1119356790199554079) to invite the bot to your server.");
 
         await interaction.reply({ embeds: [inviteEmbed] });
     },
