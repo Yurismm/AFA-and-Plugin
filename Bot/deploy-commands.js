@@ -2,6 +2,7 @@ const { REST, Routes } = require('discord.js');
 const { clientId, guildId, token } = require('./config.json');
 const fs = require('node:fs');
 const path = require('node:path');
+const chalk = require('chalk');
 
 const commands = [];
 // Grab all the command files from the commands directory you created earlier
@@ -34,13 +35,11 @@ const rest = new REST().setToken(token);
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
         const data = await rest.put(
-            Routes.applicationCommands(clientId),
-            { body: commands },
+            Routes.applicationCommands(clientId), { body: commands },
         );
 
         console.log(`Successfully reloaded ${data.length} application (/) commands.`);
 
-        
         data.forEach(command => {
             console.log(`Command Name: ${command.name}`);
         });

@@ -1,4 +1,5 @@
 require('dotenv').config();
+const chalk = require('chalk');
 const axios = require('axios');
 const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
@@ -7,6 +8,8 @@ const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBu
 const checkContent = require('./checkcontent.js');
 
 // todo: checks for duration of the video
+
+const cout = console.log;
 
 const client = new Client({
     intents: [
@@ -129,7 +132,7 @@ client.on('messageCreate', async message => {
                         .setFooter({ text: 'Please be cautious when viewing this content.'})
                         .setTimestamp();
                         // possibly can create a json log file for this to show client side
-                        console.log("flash detected");
+                        cout(chalk.red.bold('flash detected'));
                         
                         message.reply({ embeds: [flashembed] });
                     } else {
@@ -244,14 +247,12 @@ client.on('messageCreate', async message => {
 });
 
 
-// add the commands from the commands folder WIP
 for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
         } else {
@@ -286,7 +287,6 @@ client.on(Events.InteractionCreate, async interaction => {
 client.once(Events.ClientReady, cReady => {
     client.user.setActivity('cooler than cherie', { type: 'WATCHING' });
     client.user.setStatus('online');
-
     console.log(`logged in as ${cReady.user.tag}`);
 });
 
