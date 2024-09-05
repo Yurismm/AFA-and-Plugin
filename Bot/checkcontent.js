@@ -5,9 +5,13 @@ const fs = require('fs-extra');
 const path = require('path');
 const sharp = require('sharp');
 const axios = require('axios');
+const chalk = require('chalk');
 const { timeStamp } = require('console');
+const { isNull } = require('util');
 
 //notes add boolean to the check content for is gif to make this shorter?
+
+const cout = console.log;
 
 // ffmpeg configuration
 ffmpeg.setFfmpegPath(ffmpegPath);
@@ -24,20 +28,20 @@ async function calculateBrightnessDifference(frame1Path, frame2Path) {
     const { data: data1, info: info1 } = frame1; // extract data and info from frame1
     const { data: data2, info: info2 } = frame2; // extract data and info from frame2
 
-    let difference = 0;  // init difference to 0
+    let difference = 0; // init difference to 0
     const length = Math.min(data1.length, data2.length); // get the minimum length of data1 and data2
 
     for (let i = 0; i < length; i += info1.channels) {
         const brightness1 = 0.299 * data1[i] + 0.587 * data1[i + 1] + 0.114 * data1[i + 2]; // calculate brightness of pixel in frame1
         const brightness2 = 0.299 * data2[i] + 0.587 * data2[i + 1] + 0.114 * data2[i + 2]; // calculate brightness of pixel in frame2
-        difference += Math.abs(brightness1 - brightness2); 
+        difference += Math.abs(brightness1 - brightness2);
         // calculate difference between brightness of pixels for both frames using absolute value
         // higher difference indicates a significant change in brightness between frames
         // lower difference indicates a minor change in brightness between frames
         // higher difference could mean a flash has occurred in the video
         // lower difference could mean no flash in the video
         // used below to determine significant changes in the video of flashes
-        }
+    }
 
     const avgDifference = difference / (length / info1.channels); // normalize by number of pixels
     return avgDifference; // return average difference
@@ -50,9 +54,11 @@ function calculateVariance(data) {
     return variance; // return variance
 }
 
-async function checkContent(filePath, callback) {
+async function checkContent(filePath, callback, isInvalid) {
     let previousFramePath; // to store the previous frame path
     let flashDetected = false; // flag to indicate if a flash is detected
+    let invalidContent = false; // flag to indicate if the content is invalid
+    
     const frameDifferences = []; // array to store frame differences
     const significantChanges = []; // array to store significant changes
 
@@ -66,31 +72,31 @@ async function checkContent(filePath, callback) {
 
     const isGIF = filePath.endsWith('.gif'); // check if the file is a gif
 
-    if(isGIF){ 
-        console.log('gif detected');
+    if (isGIF) {
+        cout(chalk.pink('gif detected')); // log gif detected
     } // returns correctly?
 
     // extract frames from the video file
     const ffmpegCommand = ffmpeg(filePath)
         .on('start', (commandLine) => { // event listener for start, no console output
             // log the command line used to spawn ffmpeg
-            console.log('spawned ffmpeg, type: ', isGIF ? 'gif':'video');
+            console.log('spawned ffmpeg, type: ', isGIF ? 'gif' : 'video');
         })
         .on('error', (err) => {
             // log error if an error occurred
-            console.error('an error occurred: ' + err.message);
+            cout(chalk.red('an error occurred:'), err.message);
             callback(err, null); // callback with error 
         })
-        .on('end', async () => {
+        .on('end', async() => {
             // log processing is finished
             const variance = calculateVariance(frameDifferences);
             const significantChangeCount = significantChanges.length; // count of significant changes in the video
-            
+
             // logging the results
-            console.log('processing is finished');
-            console.log('frame differences:', frameDifferences);
-            console.log('variance of differences:', variance);
-            console.log('significant changes:', significantChangeCount);
+            cout(chalk.green('processing is finished'));
+            cout(chalk.blue('frame differences:'), frameDifferences);
+            cout(chalk.blue('variance of differences:'), variance);
+            cout(chalk.blue('significant changes:'), significantChangeCount);
 
             // adjusted logic to detect flash based on variance, significant changes, and average difference
             if (variance > 250 || significantChangeCount > 100) { // threshold for significant changes or variance
@@ -101,7 +107,8 @@ async function checkContent(filePath, callback) {
                 // meaning there have been more than 10 significant changes in the video which could indicate a video that is bad
                 // for epileptic people
             }
-            
+
+
             const resultData = {
                 frameDifferences,
                 variance,
@@ -111,9 +118,14 @@ async function checkContent(filePath, callback) {
                 timeStamp: new Date().toISOString()
             }
 
-            fs.writeFileSync(path.join(__dirname, 'verdictlogs','result.json'), JSON.stringify(resultData, null, 2));
+            // check if variance is NaN
+            if (isNaN(variance) || variance === null || variance === undefined) {
+                invalidContent = true;
+                cout(chalk.red('invalid content detected, or error with calculation'));
+            }
 
-            callback(null, flashDetected);
+            fs.writeFileSync(path.join(__dirname, 'verdictlogs', 'result.json'), JSON.stringify(resultData, null, 2));
+            callback(null, flashDetected, invalidContent);
 
             // cleanup
             filenames.forEach((filename) => {
@@ -122,61 +134,60 @@ async function checkContent(filePath, callback) {
                     try {
                         fs.unlinkSync(framePath);
                     } catch (error) {
-                        console.error(`failed to delete frame: ${framePath}`, error);
+                        cout(chalk.red(`failed to delete frame: ${framePath}`), error);
                     }
                 }
             });
         })
 
 
-        // saved frames
-        ffmpegCommand.screenshots({
-            count: 100, // increased number of frames to capture more data
-            folder: framesDir, // directory to save frames
-            size: '320x240', // size of frames
-            filename: 'frame-%i.png' // name convention for frames
-        })
-        
+    // saved frames
+    ffmpegCommand.screenshots({
+        count: 100, // increased number of frames to capture more data
+        folder: framesDir, // directory to save frames
+        size: '320x240', // size of frames
+        filename: 'frame-%i.png' // name convention for frames
+    })
 
-        ffmpegCommand.on('filenames', (generatedFilenames) => { // event listener for filenames
-            filenames = generatedFilenames; // save generated filenames
-            console.log('generated filenames:', filenames); // log generated filenames
-            // add a delay to ensure files are written before reading
-            setTimeout(async () => { // added setTimeout to ensure files are written before reading
-                for (let i = 0; i < filenames.length; i++) { // iterate over filenames
-                    const filename = filenames[i];
-                    const framePath = path.join(framesDir, filename);
+    ffmpegCommand.on('filenames', (generatedFilenames) => { // event listener for filenames
+        filenames = generatedFilenames; // save generated filenames
+        console.log('generated filenames:', filenames); // log generated filenames
+        // add a delay to ensure files are written before reading
+        setTimeout(async() => { // added setTimeout to ensure files are written before reading
+            for (let i = 0; i < filenames.length; i++) { // iterate over filenames
+                const filename = filenames[i];
+                const framePath = path.join(framesDir, filename);
 
-                    // Check if the frame file exists before processing
-                    if (fs.existsSync(framePath)) {
-                        // calculate difference if previous frame exists
-                        if (previousFramePath) {
-                            // calculate brightness difference between frames using function
-                            const difference = await calculateBrightnessDifference(previousFramePath, framePath);
-                            frameDifferences.push(difference);
+                // Check if the frame file exists before processing
+                if (fs.existsSync(framePath)) {
+                    // calculate difference if previous frame exists
+                    if (previousFramePath) {
+                        // calculate brightness difference between frames using function
+                        const difference = await calculateBrightnessDifference(previousFramePath, framePath);
+                        frameDifferences.push(difference);
 
-                            // significant change threshold
-                            if (difference > 10) { // threshold for significant change
-                                significantChanges.push(difference);
-                            }
+                        // significant change threshold
+                        if (difference > 10) { // threshold for significant change
+                            significantChanges.push(difference);
+                        }
 
-                            // cleanup previous frame file
-                            if (fs.existsSync(previousFramePath)) {
-                                try { // try to delete previous frame file
-                                    fs.unlinkSync(previousFramePath);
-                                } catch (error) { // error handle
-                                    console.error(`failed to delete frame: ${previousFramePath}`, error);
-                                }
+                        // cleanup previous frame file
+                        if (fs.existsSync(previousFramePath)) {
+                            try { // try to delete previous frame file
+                                fs.unlinkSync(previousFramePath);
+                            } catch (error) { // error handle
+                                cout(chalk.red(`failed to delete frame: ${previousFramePath}`), error);
                             }
                         }
-                        previousFramePath = framePath;
-                    } else {
-                        // log warning if frame file not found
-                        console.warn(`frame file not found: ${framePath}`);
                     }
+                    previousFramePath = framePath;
+                } else {
+                    // log warning if frame file not found
+                    cout(chalk.yellow(`frame file not found: ${framePath}`));
                 }
-            }, 500); // delay
-        });
+            }
+        }, 500); // delay
+    });
 }
 
 module.exports = checkContent; // export functions

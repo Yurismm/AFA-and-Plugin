@@ -1,4 +1,5 @@
 require('dotenv').config();
+const chalk = require('chalk');
 const axios = require('axios');
 const { token, xrapidkey, xhostname } = require('./config.json');
 const fs = require('node:fs');
@@ -7,6 +8,8 @@ const { Client, Collection, Events, GatewayIntentBits, InteractionType, ButtonBu
 const checkContent = require('./checkcontent.js');
 
 // todo: checks for duration of the video
+
+const cout = console.log;
 
 const client = new Client({
     intents: [
@@ -42,10 +45,10 @@ function convertPngToMp4(thumbnailUrl) {
     // webm url (not) = https://media.tenor.com/EtTrt-7hGQcAAA - Ps - /happy-sunday.webm
     // https://media.tenor.com/GiwO27j5cjoAAAAN/kiss-lesbian.png
     // "https://media.tenor.com/GiwO27j5cjoAAA**Po**/kiss-lesbian.**mp4**"
-    
+
     // replacing AAAAN with AAAPo to get the mp4 video
     const baseVideoUrl = thumbnailUrl.replace('AAAAN', 'AAAPo')
-    // change the extension from png to mp4
+        // change the extension from png to mp4
     const mp4Url = baseVideoUrl.replace('.png', '.mp4');
     return mp4Url;
 
@@ -89,7 +92,7 @@ client.on('messageCreate', async message => {
             .setImage(gifData.data.thumbnail_url);
 
         message.reply({ embeds: [gifEmbed] });
-        
+
         try {
             // ensure the downloads directory exists
             const downloadsDir = path.join(__dirname, 'downloads');
@@ -110,35 +113,46 @@ client.on('messageCreate', async message => {
 
             writer.on('finish', () => {
                 console.log(`downloaded ${gifUrl}`.toLowerCase());
-                checkContent(filePath, (err, flashDetected) => {
+                checkContent(filePath, (err, flashDetected, invalid) => {
 
-                    if (err) {
-                        // create embed 
-                        const problemembed = new EmbedBuilder()
-                        .setColor(0xFFFFFF)
-                        .setTitle('Problem analyzing content')
-                        .setDescription('An error occurred while analyzing the content. Could it be an image?')
-                        console.error('error analyzing content: ', err);
-
-                        message.reply({ embeds: [problemembed] });
+                    if (err || invalid) {
+                        if (invalid) {
+                            // create embed
+                            const invalidembed = new EmbedBuilder()
+                                .setColor(0xFFFF00) // yellow to indicate a warning
+                                .setTitle('Invalid content')
+                                .setDescription('The content you provided is invalid. Please provide a valid attachment.')
+                                .setFooter({ text: 'This content might not be safe to view.' })
+                                .setTimestamp();
+                            console.log("invalid content");
+                            message.reply({ embeds: [invalidembed] });
+                        } else {
+                            // create embed 
+                            const problemembed = new EmbedBuilder()
+                                .setColor(0xFFFFFF)
+                                .setTitle('Problem analyzing content')
+                                .setDescription('An error occurred while analyzing the content. Could it be an image?')
+                            console.error('error analyzing content: ', err);
+                            message.reply({ embeds: [problemembed] });
+                        } 
                     } else if (flashDetected) {
                         const flashembed = new EmbedBuilder()
-                        .setColor(0xFF0000) // red to indicate a warning
-                        .setTitle('Flashing content detected')
-                        .setDescription('Warning: flashing content detected in your attachment.')
-                        .setFooter({ text: 'Please be cautious when viewing this content.'})
-                        .setTimestamp();
+                            .setColor(0xFF0000) // red to indicate a warning
+                            .setTitle('Flashing content detected')
+                            .setDescription('Warning: flashing content detected in your attachment.')
+                            .setFooter({ text: 'Please be cautious when viewing this content.' })
+                            .setTimestamp();
                         // possibly can create a json log file for this to show client side
-                        console.log("flash detected");
-                        
+                        cout(chalk.red.bold('flash detected'));
+
                         message.reply({ embeds: [flashembed] });
                     } else {
                         const noflashembed = new EmbedBuilder()
-                        .setColor(0x00FF00) // green to indicate no warning
-                        .setTitle('No flashing content detected')
-                        .setDescription('No flashing content detected in your attachment.')
-                        .setFooter({text: 'This content is safe to view.'})
-                        .setTimestamp();
+                            .setColor(0x00FF00) // green to indicate no warning
+                            .setTitle('No flashing content detected')
+                            .setDescription('No flashing content detected in your attachment.')
+                            .setFooter({ text: 'This content is safe to view.' })
+                            .setTimestamp();
 
                         message.reply({ embeds: [noflashembed] });
                     }
@@ -158,11 +172,11 @@ client.on('messageCreate', async message => {
             console.error(`error downloading video: ${error}`);
         }
     }
-    
+
 
     if (message.attachments.size > 0) {
         console.log('found attachment: ', message.attachments.size);
-        
+
         message.attachments.forEach(async attachment => {
             console.log('attachment details:', attachment);
             const url = attachment.url;
@@ -189,34 +203,44 @@ client.on('messageCreate', async message => {
 
                 writer.on('finish', () => {
                     console.log(`downloaded ${name}`.toLowerCase());
-                    checkContent(filePath, (err, flashDetected) => {
-                        if (err) {
-                            // create embed 
-                            const problemembed = new EmbedBuilder()
-                            .setColor(0xFFFFFF)
-                            .setTitle('Problem analyzing content')
-                            .setDescription('An error occurred while analyzing the content. Could it be an image?')
-                            console.error('error analyzing content: ', err);
-                            
-                            message.reply({ embeds: [problemembed] });
+                    checkContent(filePath, (err, flashDetected, invalid) => {
+                        if (err || invalid) {
+                            if (invalid) {
+                                const invalidembed = new EmbedBuilder()
+                                    .setColor(0xFFFF00) // yellow to indicate a warning
+                                    .setTitle('Invalid content')
+                                    .setDescription('The content you provided is invalid. Please provide a valid attachment.')
+                                    .setFooter({ text: 'This content might not be safe to view.' })
+                                    .setTimestamp();
+                                console.log("invalid content");
+                                message.reply({ embeds: [invalidembed] });
+                            } else {
+                                // create embed 
+                                const problemembed = new EmbedBuilder()
+                                    .setColor(0xFFFFFF)
+                                    .setTitle('Problem analyzing content')
+                                    .setDescription('An error occurred while analyzing the content. Could it be an image?')
+                                console.error('error analyzing content: ', err);
+                                message.reply({ embeds: [problemembed] });
+                            }                 
                         } else if (flashDetected) {
                             const flashembed = new EmbedBuilder()
-                            .setColor(0xFF0000) // red to indicate a warning
-                            .setTitle('Flashing content detected')
-                            .setDescription('Warning: flashing content detected in your attachment.')
-                            .setFooter({ text: 'Please be cautious when viewing this content.'})
-                            .setTimestamp();
+                                .setColor(0xFF0000) // red to indicate a warning
+                                .setTitle('Flashing content detected')
+                                .setDescription('Warning: flashing content detected in your attachment.')
+                                .setFooter({ text: 'Please be cautious when viewing this content.' })
+                                .setTimestamp();
                             // possibly can create a json log file for this to show client side
                             console.log("flash detected");
-                            
+
                             message.reply({ embeds: [flashembed] });
                         } else {
                             const noflashembed = new EmbedBuilder()
-                            .setColor(0x00FF00) // green to indicate no warning
-                            .setTitle('No flashing content detected')
-                            .setDescription('No flashing content detected in your attachment.')
-                            .setFooter({text: 'This content is safe to view.'})
-                            .setTimestamp();
+                                .setColor(0x00FF00) // green to indicate no warning
+                                .setTitle('No flashing content detected')
+                                .setDescription('No flashing content detected in your attachment.')
+                                .setFooter({ text: 'This content is safe to view.' })
+                                .setTimestamp();
 
                             message.reply({ embeds: [noflashembed] });
                         }
@@ -244,14 +268,12 @@ client.on('messageCreate', async message => {
 });
 
 
-// add the commands from the commands folder WIP
 for (const folder of commandFolders) {
     const commandsPath = path.join(foldersPath, folder);
     const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
     for (const file of commandFiles) {
         const filePath = path.join(commandsPath, file);
         const command = require(filePath);
-        // Set a new item in the Collection with the key as the command name and the value as the exported module
         if ('data' in command && 'execute' in command) {
             client.commands.set(command.data.name, command);
         } else {
@@ -286,7 +308,6 @@ client.on(Events.InteractionCreate, async interaction => {
 client.once(Events.ClientReady, cReady => {
     client.user.setActivity('cooler than cherie', { type: 'WATCHING' });
     client.user.setStatus('online');
-
     console.log(`logged in as ${cReady.user.tag}`);
 });
 
