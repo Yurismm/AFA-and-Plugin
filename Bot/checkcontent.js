@@ -125,8 +125,6 @@ async function checkContent(filePath, callback, isInvalid) {
             }
 
             fs.writeFileSync(path.join(__dirname, 'verdictlogs', 'result.json'), JSON.stringify(resultData, null, 2));
-
-
             callback(null, flashDetected, invalidContent);
 
             // cleanup
