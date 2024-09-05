@@ -4,3 +4,5 @@ Bot/othertokens.json
 Bot/.env
 Bot/Commands/util/.env
 Bot/run.bat
+Bot/run.bat
+*.bat
