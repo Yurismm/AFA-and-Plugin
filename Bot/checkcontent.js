@@ -7,6 +7,7 @@ const sharp = require('sharp');
 const axios = require('axios');
 const chalk = require('chalk');
 const { timeStamp } = require('console');
+const { isNull } = require('util');
 
 //notes add boolean to the check content for is gif to make this shorter?
 
@@ -53,9 +54,11 @@ function calculateVariance(data) {
     return variance; // return variance
 }
 
-async function checkContent(filePath, callback) {
+async function checkContent(filePath, callback, isInvalid) {
     let previousFramePath; // to store the previous frame path
     let flashDetected = false; // flag to indicate if a flash is detected
+    let invalidContent = false; // flag to indicate if the content is invalid
+    
     const frameDifferences = []; // array to store frame differences
     const significantChanges = []; // array to store significant changes
 
@@ -91,7 +94,6 @@ async function checkContent(filePath, callback) {
 
             // logging the results
             cout(chalk.green('processing is finished'));
-
             cout(chalk.blue('frame differences:'), frameDifferences);
             cout(chalk.blue('variance of differences:'), variance);
             cout(chalk.blue('significant changes:'), significantChangeCount);
@@ -106,6 +108,7 @@ async function checkContent(filePath, callback) {
                 // for epileptic people
             }
 
+
             const resultData = {
                 frameDifferences,
                 variance,
@@ -115,9 +118,16 @@ async function checkContent(filePath, callback) {
                 timeStamp: new Date().toISOString()
             }
 
+            // check if variance is NaN
+            if (isNaN(variance) || variance === null || variance === undefined) {
+                invalidContent = true;
+                cout(chalk.red('invalid content detected, or error with calculation'));
+            }
+
             fs.writeFileSync(path.join(__dirname, 'verdictlogs', 'result.json'), JSON.stringify(resultData, null, 2));
 
-            callback(null, flashDetected);
+
+            callback(null, flashDetected, invalidContent);
 
             // cleanup
             filenames.forEach((filename) => {
